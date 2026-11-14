@@ -1,0 +1,51 @@
+# HaUI Form - môi trường demo: Oracle Database 19c + ứng dụng web
+# Khởi động:  docker compose up -d --build
+# Lần đầu Oracle mất 15-20 phút để tạo CSDL và chạy script cài đặt (xem: docker compose logs -f oracle)
+name: hauiform
+
+services:
+  oracle:
+    image: doctorkirk/oracle-19c:latest   # build từ github.com/oracle/docker-images (19.3 EE)
+    container_name: hauiform-oracle
+    environment:
+      ORACLE_SID: ORCLCDB
+      ORACLE_PDB: ORCLPDB1
+      ORACLE_PWD: "Oracle19c#Pwd"
+      ORACLE_CHARACTERSET: AL32UTF8
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "1521:1521"
+    volumes:
+      - oradata:/opt/oracle/oradata
+      - ./sql:/opt/hauiform/sql:ro
+      - ./docker/oracle:/opt/hauiform/docker:ro
+      - ./docker/oracle/setup:/opt/oracle/scripts/setup:ro
+      - ./docker/oracle/dbca.rsp.tmpl:/opt/oracle/dbca.rsp.tmpl:ro
+    shm_size: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "$$ORACLE_BASE/checkDBStatus.sh >/dev/null && test -f /opt/oracle/oradata/.hauiform_installed"]
+      interval: 30s
+      timeout: 20s
+      retries: 10
+      start_period: 40m
+
+  web:
+    build: ./web
+    container_name: hauiform-web
+    depends_on:
+      oracle:
+        condition: service_healthy
+    environment:
+      DB_CONNECT: oracle:1521/ORCLPDB1
+      DB_APP_USER: hf_app
+      DB_APP_PASSWORD: "HfApp#2026"
+      DB_OWNER_USER: hauiform
+      DB_OWNER_PASSWORD: "HaUIForm#2026"
+      PORT: "3000"
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  oradata:

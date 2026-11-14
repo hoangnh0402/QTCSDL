@@ -1,0 +1,14 @@
+{
+  "name": "hauiform-web",
+  "version": "1.0.0",
+  "description": "Ứng dụng web minh họa cho CSDL Oracle HaUI Form",
+  "main": "src/server.js",
+  "private": true,
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "4.21.2",
+    "oracledb": "6.10.0"
+  }
+}
